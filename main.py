@@ -43,8 +43,8 @@ UPLOADER_CHANNEL_IDS = [
     # Add more uploader channel IDs if monitoring multiple giveaway hosts
 ]
 
-EMAIL_TO_NOTIFY = os.getenv("EMAIL_ADDRESS")
-EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
+EMAIL_TO_NOTIFY = os.getenv("EMAIL_ADDRESS")  # your Gmail
+EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")  # Gmail App Password from environment
 CHECK_INTERVAL = 60   # 1 minute
 
 # State tracking for seen replies (prevents duplicate notifications)
@@ -211,15 +211,45 @@ def check_all_videos(youtube, seen_replies):
     
     return all_new_replies
 
-def send_email(message):
-    msg = MIMEText(message)
-    msg["Subject"] = "YouTube Checker Alert 🚨"
-    msg["From"] = EMAIL_TO_NOTIFY
-    msg["To"] = EMAIL_TO_NOTIFY
+def send_email(reply_info):
+    """Send detailed email notification about uploader reply"""
+    if not EMAIL_APP_PASSWORD:
+        print("❌ Email password not configured!")
+        print("Please set EMAIL_APP_PASSWORD environment variable.")
+        return False
+        
+    try:
+        # Create detailed email message
+        email_body = f"""
+🎉 GIVEAWAY UPLOADER REPLIED! 🎉
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(EMAIL_TO_NOTIFY, EMAIL_APP_PASSWORD)
-        server.sendmail(EMAIL_TO_NOTIFY, EMAIL_TO_NOTIFY, msg.as_string())
+📺 Video: https://youtube.com/watch?v={reply_info['video_id']}
+👤 Your Channel: {reply_info['your_channel']}
+🎯 Uploader Channel: {reply_info['uploader_channel']}
+
+💬 Your Original Comment:
+"{reply_info['original_comment']}"
+
+✨ Uploader's Reply:
+"{reply_info['reply_text']}"
+
+🔗 Direct link: https://youtube.com/watch?v={reply_info['video_id']}
+
+Good luck with the giveaway! 🍀
+        """
+        
+        msg = MIMEText(email_body)
+        msg["Subject"] = f"🚨 Giveaway Reply Detected - {reply_info['video_id']}"
+        msg["From"] = EMAIL_TO_NOTIFY
+        msg["To"] = EMAIL_TO_NOTIFY
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(EMAIL_TO_NOTIFY, EMAIL_APP_PASSWORD)
+            server.sendmail(EMAIL_TO_NOTIFY, EMAIL_TO_NOTIFY, msg.as_string())
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
+        return False
 
 if __name__ == "__main__":
     print("🎯 Multi-Channel YouTube Giveaway Monitor Starting...")
@@ -229,9 +259,6 @@ if __name__ == "__main__":
     print(f"✉️  Will notify: {EMAIL_TO_NOTIFY}")
     print(f"⏱️  Check interval: {CHECK_INTERVAL} seconds")
     print("=" * 60)
-    
-    send_email("✅ GitHub Actions test: email sending works!")
-    print("Email sent successfully!")
     
     # Load previously seen replies
     seen_replies = load_seen_replies()
