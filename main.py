@@ -34,6 +34,7 @@ YOUR_CHANNEL_IDS = [
     "UCgKOtboYq_1qVfEUQ8qjixA",
     "UCdhfe2CCUQX4QPQYFD4_FlQ",
     "UCSUXjXKIvVM95m0RsB5hEzQ",
+    "UCZ26gY-_irWFBNXTA2_5eTw",
     # Add more channel IDs as you provide them
 ]
 
